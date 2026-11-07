@@ -1,0 +1,40 @@
+#!/bin/sh
+# Start the OpenArena dedicated server (START_EXE).
+#
+# Runs `./oa_ded.x86_64 +set dedicated <1|2> +set net_port <OA_PORT> +set fs_basepath <root>
+# +set fs_homepath <root> [+set fs_game <OA_GAME>] <START_ARGS> +exec lancommander.cfg` from the
+# server root, so the game data comes from Merged/ and everything the server writes (configs,
+# logs) lands in Overlay/. lancommander.cfg (see the 30-ConfigureOpenArena hook) starts the map.
+set -e
+
+root="${SERVER_ROOT:-/config/Merged}"
+game="${OA_GAME}"
+[ "$game" = baseoa ] && game=
+
+cd "$root"
+
+if [ ! -f ./oa_ded.x86_64 ] || [ ! -f baseoa/pak0.pk3 ]; then
+    echo "oa_ded.x86_64 or baseoa/pak0.pk3 not found in $root; set OA_SERVER_URL or copy OpenArena into /config/Server" >&2
+    exit 1
+fi
+
+# dedicated 1 = LAN only, 2 = also announce to the internet master servers
+case "$(echo "${OA_LAN:-true}" | tr '[:upper:]' '[:lower:]')" in
+    false|0|no) dedicated=2 ;;
+    *) dedicated=1 ;;
+esac
+
+set -- ./oa_ded.x86_64 \
+    +set dedicated "$dedicated" \
+    +set net_port "${OA_PORT:-27960}" \
+    +set fs_basepath "$root" \
+    +set fs_homepath "$root" \
+    +set fs_game "$game" \
+    +set com_ansiColor 0 \
+    "$@" \
+    +exec lancommander.cfg
+
+echo "Starting: $*"
+
+# Line-buffer the console output so it reaches docker logs straight away
+exec stdbuf -oL -eL "$@" < /dev/null

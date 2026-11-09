@@ -104,6 +104,39 @@ Clients can fetch missing custom `.pk3` files over HTTP instead of the slow in-g
 
 Put `.ps1` scripts in `config/Scripts/Hooks/<HookName>/`.
 
+## Match Statistics
+
+The server can report the matches played on it to LANCommander, with the
+[LANCommander match statistics plugin](https://github.com/LANCommander/LANCommander.MatchStatistics.QMM).
+The plugin runs in [QMM2](https://github.com/thecybermind/qmm2), and both are built into the image. They are
+turned on when `MATCH_STATS_SERVER_URL` and `MATCH_STATS_TOKEN` are set. QMM2 then takes the place of the game
+module, `baseoa/qagamex86_64.so`, and loads the game's own module (kept as `qmm_qagamex86_64.so`) and the plugin. Turned off, the
+game's own module is put back.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MATCH_STATS_ENABLED` | `auto`: on when `MATCH_STATS_SERVER_URL` and `MATCH_STATS_TOKEN` are set. `true` or `false` | `auto` |
+| `MATCH_STATS_SERVER_URL` | The LANCommander server, e.g. `http://lancommander.lan:1337`. Only `http://` works on Linux | *(empty)* |
+| `MATCH_STATS_TOKEN` | A LANCommander access token with the **Report matches** scope (Profile → Access Tokens). It isn't written to any file | *(empty)* |
+| `MATCH_STATS_GAME_ID` | The game's id in LANCommander | *(empty)* |
+| `MATCH_STATS_SERVER_ID` | This server's id in LANCommander, if LANCommander manages it | *(empty)* |
+| `MATCH_STATS_MIN_PLAYERS` | Human players needed before a match is recorded | *(1)* |
+| `MATCH_STATS_RECORD_BOTS` | Record bots as players (`true`/`false`) | *(true)* |
+| `MATCH_STATS_RECORD_CHAT` | Record chat messages (`true`/`false`) | *(false)* |
+| `QMM_MOD_DIR` | The folder of the mod the server runs (its `fs_game`) | `OA_GAME`, or `baseoa` |
+| `QMM_PLUGINS` | More QMM2 plugins to load, comma-separated, relative to `QMM_MOD_DIR` | *(empty)* |
+
+The settings are written to `baseoa/lancommander_qmm.cfg` as `lc_*` cvars on every start, and QMM2 execs it once
+the plugin has loaded. Settings left empty aren't written, so they and the plugin's other `lc_*` cvars (see its
+README) can be set in `server.cfg` instead, with `set`. A `qmm2.json` you put in `Overlay/baseoa/` yourself is
+left alone.
+
+`+set vm_game 0` is added to the command line so the engine loads QMM2, which then runs the game's `vm/qagame.qvm` itself. OpenArena uses the plugin's Quake III module.
+
+`lc_status` on the server console or over RCON shows the match being recorded and how delivery is going. Reports
+that couldn't be delivered yet are kept in `Overlay/baseoa/qmmaddons/lancommander/.interposer/Matches/` and sent
+once LANCommander can be reached.
+
 ## Troubleshooting
 
 - **`SHA256 mismatch`**: `OA_SERVER_URL` points at a different zip than the official `openarena-0.8.8.zip`. Clear `OA_SERVER_SHA256` (or set the zip's hash).

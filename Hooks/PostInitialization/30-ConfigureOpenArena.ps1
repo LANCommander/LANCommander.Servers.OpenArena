@@ -6,6 +6,8 @@
 # OA_* settings win, or last when neither OA_MAP nor OA_MAP_LIST is set, so it starts the map.
 
 $game = if ($Env:OA_GAME) { $Env:OA_GAME } else { 'baseoa' }
+# 40-InstallMatchStatistics installs QMM2 into the same folder
+if (-not $Env:QMM_MOD_DIR) { $Env:QMM_MOD_DIR = $game }
 $dir = Join-Path $Env:SERVER_ROOT $game
 $file = Join-Path $dir 'lancommander.cfg'
 
